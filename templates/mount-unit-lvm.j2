@@ -1,0 +1,11 @@
+[Unit]
+Description = Mount for {{ item.path }}
+
+[Mount]
+What=/dev/mapper/{{ item.lvm_vg }}-{{ item.lvm_lv }}
+Where={{ item.path }}
+Type={{ item.fs_type }}
+Options={{ item.mount_options | default([]) | join(',') }}
+
+[Install]
+WantedBy = multi-user.target

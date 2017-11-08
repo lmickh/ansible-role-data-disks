@@ -1,54 +1,25 @@
 ---
-- name: Partition standard data disks
-  become: true
-  parted:
-    align: optimal
-    device: '{{ item.devices|join() }}'
-    label: gpt
-    number: 1
-    part_type: primary
-    state: present
-  with_items: '{{ data_disks }}'
-  when:
-    - (item.type is not defined) or
-      (item.type == 'standard')
-    - item.devices|length == 1
-
-- name: Get realpath of standard disk
-  become: true
-  command: /usr/bin/realpath "{{ item.devices|join() }}"
-  changed_when: false
-  register: data_disks_standard_realpath
-  with_items: '{{ data_disks }}'
-  when:
-    - (item.type is not defined) or
-      (item.type == 'standard')
-    - item.devices|length == 1
-
 - name: Format standard data disks
   become: true
   filesystem:
-    dev: "{{ item.1.stdout }}1"
-    fstype: '{{ item.0.fs_type }}'
-    opts: '{{ item.0.fs_options | default(None) }}'
-  with_together:
-    - '{{ data_disks }}'
-    - '{{ data_disks_standard_realpath.results }}'
+    dev: "{{ item.devices[0] }}"
+    fstype: '{{ item.fs_type }}'
+    opts: '{{ item.fs_options | default(None) }}'
+  with_items: '{{ data_disks }}'
   when:
-    - (item.0.type is not defined) or
-      (item.0.type == 'standard')
+    - (item.type is not defined) or
+      (item.type == 'standard')
+    - item.devices|length == 1
 
-- name: Get UUID of standard disk partition
+- name: Get UUID of standard disks
   become: true
-  command: blkid -s UUID -o value "{{ item.1.stdout }}1"
+  command: blkid -s UUID -o value "{{ item.devices[0] }}"
   changed_when: false
   register: data_disks_standard_blkid
-  with_together:
-    - '{{ data_disks }}'
-    - '{{ data_disks_standard_realpath.results }}'
+  with_items: '{{ data_disks }}'
   when:
-    - (item.0.type is not defined) or
-      (item.0.type == 'standard')
+    - (item.type is not defined) or
+      (item.type == 'standard')
 
 - name: Configure systemd unit files for standard disks
   become: true

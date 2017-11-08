@@ -1,64 +1,74 @@
 ---
-- name: Partition lvm disks
+# - name: Get UUID of lvm disks
+#   become: true
+#   command: blkid -s UUID -o value "{{ item.1 }}"
+#   changed_when: false
+#   register: data_disks_standard_blkid
+#   with_subelements:
+#     - '{{ data_disks }}'
+#     - devices
+#   when:
+#     - item.type is defined
+#     - item.type == 'lvm'
+
+- name: Manage lvm volume groups for data disks
   become: true
-  parted:
-    align: optimal
-    device: '{{ item.devices|join() }}'
-    label: gpt
-    flags: [ lvm ]
-    number: 1
-    part_type: primary
+  lvg:
+    vg: '{{ item.lvm_vg }}'
+    pvs: '{{ item.devices | join(",") }}'
+    pesize: '{{ item.lvm_pesize | default(4)}}'
+    vg_options: '{{ item.lvm_vg_options | default("--clustered n")}}'
     state: present
   with_items: '{{ data_disks }}'
   when:
     - item.type is defined
     - item.type == 'lvm'
 
-# - name: Get realpath of standard disk
-#   become: true
-#   command: /usr/bin/realpath "{{ item.devices|join() }}"
-#   changed_when: false
-#   register: data_disks_standard_realpath
-#   with_items: '{{ data_disks }}'
-#   when:
-#     - item.type is defined
-#     - item.type == 'lvm'
-
-- name: Format logical volumes
+- name: Manage lvm logical volumes for data disks
   become: true
-  filesystem:
-    dev: "{{ item.1.stdout }}1"
-    fstype: '{{ item.0.fs_type }}'
-    opts: '{{ item.0.fs_options | default(None) }}'
-  with_together:
-    - '{{ data_disks }}'
-    - '{{ data_disks_standard_realpath.results }}'
+  lvol:
+    vg: '{{ item.lvm_vg }}'
+    lv: '{{ item.lvm_lv }}'
+    size: '{{ item.lvm_lv_size | default("100%VG") }}'
+    opts: '{{ item.lvm_lv_options | default(None) }}'
+  with_items: '{{ data_disks }}'
   when:
     - item.type is defined
     - item.type == 'lvm'
 
-- name: Get UUID of lvm disk partition
+- name: Format lvm logical volumes
   become: true
-  command: blkid -s UUID -o value "{{ item.1.stdout }}1"
-  changed_when: false
-  register: data_disks_standard_blkid
-  with_together:
-    - '{{ data_disks }}'
-    - '{{ data_disks_standard_realpath.results }}'
+  filesystem:
+    dev: '/dev/mapper/{{ item.lvm_vg }}-{{ item.lvm_lv }}'
+    fstype: '{{ item.fs_type }}'
+    opts: '{{ item.fs_options | default(None) }}'
+  with_items: '{{ data_disks }}'
+  when:
+    - item.type is defined
+    - item.type == 'lvm'
 
 - name: Configure systemd unit files for lvm disks
   become: true
   template:
-    dest: "/etc/systemd/system/{{ item.0.path[1:] | replace('/', '-') }}.mount"
-    src: templates/mount-unit.j2
-  with_together:
-    - '{{ data_disks }}'
-    - '{{ data_disks_standard_blkid.results }}'
+    dest: "/etc/systemd/system/{{ item.path[1:] | replace('/', '-') }}.mount"
+    src: templates/mount-unit-lvm.j2
+  with_items: '{{ data_disks }}'
   when:
     - ansible_service_mgr == 'systemd'
     - item.type is defined
     - item.type == 'lvm'
   register: systemd_mount_config
+
+- name: Enable/start systemd units for lvm disks
+  become: true
+  systemd:
+    name: '{{ item }}'
+    daemon_reload: yes
+    enabled: yes
+    state: started
+  with_items:
+    - 'lvm2-lvmetad.service'
+    - 'lvm2-lvmetad.socket'
 
 - name: Enable/start systemd units for lvm disks
   become: true
@@ -70,5 +80,5 @@
   with_items: '{{ data_disks }}'
   when:
     - ansible_service_mgr == 'systemd'
-    - (item.type is not defined) or
-      (item.type == 'standard')
+    - item.type is defined
+    - item.type == 'lvm'
