@@ -1,0 +1,9 @@
+---
+- include_tasks: "standard.yml"
+  when: data_disks
+
+# - include_tasks: "lvm.yml"
+#   when: data_disks
+#
+# - include_tasks: "mdadm.yml"
+#   when: data_disks

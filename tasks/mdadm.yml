@@ -1,0 +1,16 @@
+---
+- name: Partition mdadm data disks
+  become: true
+  parted:
+    align: optimal
+    device: '{{ item.1 }}'
+    label: gpt
+    number: 1
+    part_type: primary
+    state: present
+  with_subelements:
+    - '{{ data_disks }}'
+    - 'devices'
+  when:
+    - item.0.type is defined
+    - item.0.type == 'mdadm'

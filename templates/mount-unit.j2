@@ -1,0 +1,11 @@
+[Unit]
+Description = Mount for {{ item.0.path }}
+
+[Mount]
+What=/dev/disk/by-uuid/{{ item.1.stdout }}
+Where={{ item.0.path }}
+Type={{ item.0.fs_type }}
+Options={{ item.0.mount_options | default([]) | join(',') }}
+
+[Install]
+WantedBy = multi-user.target
