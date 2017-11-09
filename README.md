@@ -21,6 +21,7 @@ Requirements
 Role Variables
 --------------
 
+```
 data_disks:
   - path: /opt/standard_example
     devices: ['/dev/sdc']        # Only list single device for 'standard' disks
@@ -42,6 +43,7 @@ data_disks:
     lvm_vg_options: '--clustered n' # Optional
     lvm_lv_options: ''           # Optional
     lvm_pesize: 4                # Optional
+```
 
 Dependencies
 ------------
@@ -50,7 +52,7 @@ No role dependencies
 
 Example Playbook
 ----------------
-
+```
     - hosts: some_servers
       vars:
         data_disks:
@@ -59,6 +61,7 @@ Example Playbook
             fs_type: xfs
       roles:
         - {{ lmickh.data-disks}}
+```
 
 License
 -------
