@@ -11,32 +11,37 @@ in progress.
 Requirements
 ------------
 
-Ansbile ~> 2.4
-systemd
-blkid
-lvm
-mdadm
-parted
+- Ansbile ~> 2.4
+- systemd
+- blkid
+- lvm
+- mdadm
+- parted
 
 Role Variables
 --------------
 
 data_disks:
-  - path: /opt/example
+  - path: /opt/standard_example
     devices: ['/dev/sdc']        # Only list single device for 'standard' disks
     type: standard               # Defaults to 'standard' if left undefined
     fs_type: xfs
-    fs_options:
+    fs_options:                  # Optional
       - su=512
       - sw=128
-    mount_options:
+    mount_options:               # Optional
       - noatime
       - nobarrier
-  - path: /opt/data1
-    devices: ['/dev/sdd']
-    type: lvm
+  - path: /opt/lvm_example
+    devices: ['/dev/sdd', '/dev/sde']
     fs_type: xfs
-
+    type: lvm
+    lvm_vg: vg_appdata
+    lvm_lv: lv_data1
+    lvm_size: 100%VG             # Optional
+    lvm_vg_options: '--clustered n' # Optional
+    lvm_lv_options: ''           # Optional
+    lvm_pesize: 4                # Optional
 
 Dependencies
 ------------

@@ -1,16 +1,4 @@
 ---
-# - name: Get UUID of lvm disks
-#   become: true
-#   command: blkid -s UUID -o value "{{ item.1 }}"
-#   changed_when: false
-#   register: data_disks_standard_blkid
-#   with_subelements:
-#     - '{{ data_disks }}'
-#     - devices
-#   when:
-#     - item.type is defined
-#     - item.type == 'lvm'
-
 - name: Manage lvm volume groups for data disks
   become: true
   lvg:

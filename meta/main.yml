@@ -1,0 +1,14 @@
+dependencies: []
+galaxy_info:
+  author: lmickh
+  description: Format disks, create software devices, and manage mount unit files for systemd.
+  license: MIT
+  min_ansible_version: 2.4
+  platforms:
+    - name: EL
+      versions:
+        - 7
+    - name: Container Linux
+  galaxy_tags:
+    - systemd
+    - storage
