@@ -57,6 +57,10 @@
   with_items:
     - 'lvm2-lvmetad.service'
     - 'lvm2-lvmetad.socket'
+  when:
+    - ansible_service_mgr == 'systemd'
+    - item.type is defined
+    - item.type == 'lvm'
 
 - name: Enable/start systemd units for lvm disks
   become: true
